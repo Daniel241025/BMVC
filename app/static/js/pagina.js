@@ -1,196 +1,307 @@
-// Elementos do DOM
-const welcomeTitle = document.getElementById('welcome-title');
-const welcomeMessage = document.getElementById('welcome-message');
-const currentTime = document.getElementById('current-time');
-const visitCounter = document.getElementById('visit-counter');
-const themeToggle = document.getElementById('theme-toggle');
-const changeColorBtn = document.getElementById('change-color');
-const footerText = document.getElementById('footer-text');
+// ============================================================
+// INICIALIZAÇÃO E VARIÁVEIS GLOBAIS
+// ============================================================
 
-// Variáveis
-let seconds = 0;
-let timer;
-const messages = [
-    "É um prazer ter você aqui!",
-    "Que bom ver você!",
-    "Seja muito bem-vindo!",
-    "Ficamos felizes com sua visita!",
-    "Que honra tê-lo conosco!"
+const pageState = {
+    visitSeconds: 0,
+    totalVisits: parseInt(localStorage.getItem('totalVisits')) || 1,
+    colorCount: parseInt(localStorage.getItem('colorCount')) || 0,
+    isDarkMode: localStorage.getItem('darkMode') === 'true',
+    currentColor: localStorage.getItem('currentColor') || 'default'
+};
+
+// Cores disponíveis para ciclo
+const colorSchemes = [
+    { name: 'default', primary: '#2c3e50', secondary: '#3498db' },
+    { name: 'sunset', primary: '#e74c3c', secondary: '#e67e22' },
+    { name: 'forest', primary: '#27ae60', secondary: '#2ecc71' },
+    { name: 'ocean', primary: '#2980b9', secondary: '#3498db' },
+    { name: 'purple', primary: '#8e44ad', secondary: '#9b59b6' },
+    { name: 'magenta', primary: '#c0392b', secondary: '#e74c3c' }
 ];
 
-// Inicialização
-document.addEventListener('DOMContentLoaded', function() {
-    startTimer();
-    updateTime();
-    setInterval(updateTime, 1000);
-    setInterval(changeWelcomeMessage, 5000);
+// ============================================================
+// INICIALIZAÇÃO DO DOCUMENTO
+// ============================================================
 
-    // Verifica preferência de tema salva
-    if (localStorage.getItem('darkMode') === 'true') {
-        document.body.classList.add('dark-mode');
-        themeToggle.textContent = '☀️ Modo Claro';
-    }
+document.addEventListener('DOMContentLoaded', function() {
+    initializeTheme();
+    initializeTime();
+    initializeCounter();
+    attachEventListeners();
+    updateStatistics();
+    
+    console.log('🚀 Página carregada com sucesso!');
 });
 
-// Timer de visita
-function startTimer() {
-    timer = setInterval(() => {
-        seconds++;
-        visitCounter.textContent = seconds;
+// ============================================================
+// TEMA ESCURO/CLARO
+// ============================================================
 
-        // Mensagem especial a cada 30 segundos
-        if (seconds % 30 === 0) {
-            showSpecialMessage();
-        }
+function initializeTheme() {
+    if (pageState.isDarkMode) {
+        document.body.classList.add('dark-mode');
+        updateThemeButton();
+    }
+}
+
+function toggleTheme() {
+    document.body.classList.toggle('dark-mode');
+    pageState.isDarkMode = document.body.classList.contains('dark-mode');
+    localStorage.setItem('darkMode', pageState.isDarkMode);
+    updateThemeButton();
+    console.log('🌓 Tema alternado para:', pageState.isDarkMode ? 'Escuro' : 'Claro');
+}
+
+function updateThemeButton() {
+    const themeBtn = document.getElementById('theme-toggle');
+    const activeThemeSpan = document.getElementById('active-theme');
+    
+    if (pageState.isDarkMode) {
+        themeBtn.innerHTML = '<span class="btn-icon">☀️</span> Modo Claro';
+        activeThemeSpan.textContent = 'Escuro';
+    } else {
+        themeBtn.innerHTML = '<span class="btn-icon">🌙</span> Modo Escuro';
+        activeThemeSpan.textContent = 'Claro';
+    }
+}
+
+// ============================================================
+// EXIBIÇÃO DE HORA E DATA
+// ============================================================
+
+function initializeTime() {
+    updateTimeDisplay();
+    setInterval(updateTimeDisplay, 1000);
+}
+
+function updateTimeDisplay() {
+    const now = new Date();
+    
+    // Hora formatada
+    const timeOptions = { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit',
+        hour12: false 
+    };
+    const timeString = now.toLocaleString('pt-BR', timeOptions);
+    document.getElementById('current-time').textContent = timeString;
+    
+    // Data formatada
+    const dateOptions = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    };
+    const dateString = now.toLocaleString('pt-BR', dateOptions);
+    document.getElementById('current-date').textContent = dateString.charAt(0).toUpperCase() + dateString.slice(1);
+}
+
+// ============================================================
+// CONTADOR DE VISITA
+// ============================================================
+
+function initializeCounter() {
+    pageState.visitSeconds = 0;
+    updateCounterDisplay();
+    
+    setInterval(function() {
+        pageState.visitSeconds++;
+        updateCounterDisplay();
     }, 1000);
 }
 
-// Atualiza horário atual
-function updateTime() {
-    const now = new Date();
-    const timeString = now.toLocaleTimeString('pt-BR', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-    });
-    const dateString = now.toLocaleDateString('pt-BR', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-
-    currentTime.textContent = `${dateString} - ${timeString}`;
+function updateCounterDisplay() {
+    const counter = document.getElementById('visit-counter');
+    const minutes = Math.floor(pageState.visitSeconds / 60);
+    const seconds = pageState.visitSeconds % 60;
+    
+    if (minutes > 0) {
+        counter.textContent = `${minutes}m ${seconds}s`;
+    } else {
+        counter.textContent = `${pageState.visitSeconds}s`;
+    }
 }
 
-// Alterna mensagens de boas-vindas
-function changeWelcomeMessage() {
-    const randomIndex = Math.floor(Math.random() * messages.length);
-    welcomeMessage.style.opacity = '0';
-
-    setTimeout(() => {
-        welcomeMessage.textContent = messages[randomIndex];
-        welcomeMessage.style.opacity = '1';
-    }, 500);
+function resetCounter() {
+    pageState.visitSeconds = 0;
+    updateCounterDisplay();
+    showNotification('Contador resetado! ⏱️');
+    console.log('🔄 Contador resetado');
 }
 
-// Mensagem especial
-function showSpecialMessage() {
-    const originalMessage = welcomeMessage.textContent;
-    welcomeMessage.textContent = "🎉 Obrigado por ficar conosco!";
-    welcomeMessage.style.color = '#e74c3c';
+// ============================================================
+// MUDANÇA DE COR
+// ============================================================
 
-    setTimeout(() => {
-        welcomeMessage.textContent = originalMessage;
-        welcomeMessage.style.color = '';
+function changeColor() {
+    // Encontrar o próximo esquema de cor
+    const currentIndex = colorSchemes.findIndex(c => c.name === pageState.currentColor);
+    const nextIndex = (currentIndex + 1) % colorSchemes.length;
+    const nextColor = colorSchemes[nextIndex];
+    
+    // Aplicar as cores
+    document.documentElement.style.setProperty('--primary-color', nextColor.primary);
+    document.documentElement.style.setProperty('--secondary-color', nextColor.secondary);
+    
+    // Atualizar estado
+    pageState.currentColor = nextColor.name;
+    pageState.colorCount++;
+    
+    // Salvar no localStorage
+    localStorage.setItem('currentColor', pageState.currentColor);
+    localStorage.setItem('colorCount', pageState.colorCount);
+    
+    // Atualizar UI
+    updateStatistics();
+    showNotification(`Cor alterada para: ${nextColor.name.toUpperCase()} 🎨`);
+    console.log('🎨 Cor alterada para:', nextColor.name);
+}
+
+// ============================================================
+// ESTATÍSTICAS
+// ============================================================
+
+function updateStatistics() {
+    document.getElementById('total-visits').textContent = pageState.totalVisits;
+    document.getElementById('color-count').textContent = pageState.colorCount;
+    document.getElementById('active-theme').textContent = pageState.isDarkMode ? 'Escuro' : 'Claro';
+}
+
+// ============================================================
+// LISTENERS DE EVENTOS
+// ============================================================
+
+function attachEventListeners() {
+    // Botão de tema
+    document.getElementById('theme-toggle').addEventListener('click', function() {
+        toggleTheme();
+    });
+    
+    // Botão de cor
+    document.getElementById('change-color').addEventListener('click', function() {
+        changeColor();
+    });
+    
+    // Botão de reset
+    document.getElementById('reset-counter').addEventListener('click', function() {
+        resetCounter();
+    });
+    
+    // Detectar inatividade
+    document.addEventListener('mousemove', resetInactivityTimer);
+    document.addEventListener('keypress', resetInactivityTimer);
+}
+
+// ============================================================
+// NOTIFICAÇÕES E FEEDBACK
+// ============================================================
+
+function showNotification(message) {
+    // Criar elemento de notificação
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background-color: #27ae60;
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Remover após 3 segundos
+    setTimeout(function() {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(function() {
+            notification.remove();
+        }, 300);
     }, 3000);
 }
 
-// Alternar tema claro/escuro
-themeToggle.addEventListener('click', function() {
-    document.body.classList.toggle('dark-mode');
+// ============================================================
+// TIMER DE INATIVIDADE
+// ============================================================
 
-    if (document.body.classList.contains('dark-mode')) {
-        this.textContent = '☀️ Modo Claro';
-        localStorage.setItem('darkMode', 'true');
-    } else {
-        this.textContent = '🌙 Modo Escuro';
-        localStorage.setItem('darkMode', 'false');
-    }
+let inactivityTimeout;
+
+function resetInactivityTimer() {
+    clearTimeout(inactivityTimeout);
+    
+    inactivityTimeout = setTimeout(function() {
+        // Ação após 5 minutos de inatividade
+        console.log('⏱️ Usuário inativo por 5 minutos');
+    }, 5 * 60 * 1000);
+}
+
+// ============================================================
+// FUNÇÕES AUXILIARES
+// ============================================================
+
+function getFormattedDate() {
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    return new Date().toLocaleDateString('pt-BR', options);
+}
+
+function getFormattedTime() {
+    const options = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+    return new Date().toLocaleTimeString('pt-BR', options);
+}
+
+// ============================================================
+// INICIALIZAR SESSÃO
+// ============================================================
+
+// Incrementar visitas quando a página for carregada
+window.addEventListener('load', function() {
+    pageState.totalVisits++;
+    localStorage.setItem('totalVisits', pageState.totalVisits);
+    updateStatistics();
+    console.log('📊 Total de visitas:', pageState.totalVisits);
 });
 
-// Mudar cor de fundo
-changeColorBtn.addEventListener('click', function() {
-    const colors = [
-        'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-        'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-        'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-        'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-        'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)'
-    ];
-
-    const randomColor = colors[Math.floor(Math.random() * colors.length)];
-    document.body.style.background = randomColor;
+// Salvar estado quando a página for fechada
+window.addEventListener('beforeunload', function() {
+    localStorage.setItem('lastVisit', new Date().toISOString());
+    console.log('💾 Estado salvo');
 });
 
-// Efeito de digitação no título (opcional)
-function typeWriter(element, text, speed = 100) {
-    let i = 0;
-    element.innerHTML = '';
+// ============================================================
+// ADICIONAR ESTILOS PARA ANIMAÇÕES
+// ============================================================
 
-    function type() {
-        if (i < text.length) {
-            element.innerHTML += text.charAt(i);
-            i++;
-            setTimeout(type, speed);
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
         }
     }
-    type();
-}
-
-// Reiniciar animação do título ao clicar
-welcomeTitle.addEventListener('click', function() {
-    typeWriter(this, 'Bem-vindo!', 100);
-});
-
-// Efeito de confete (simples)
-function createConfetti() {
-    for (let i = 0; i < 20; i++) {
-        setTimeout(() => {
-            const confetti = document.createElement('div');
-            confetti.style.cssText = `
-                position: fixed;
-                width: 10px;
-                height: 10px;
-                background: hsl(${Math.random() * 360}, 100%, 50%);
-                top: -10px;
-                left: ${Math.random() * 100}vw;
-                border-radius: 50%;
-                pointer-events: none;
-                animation: fall linear forwards;
-            `;
-
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes fall {
-                    to {
-                        transform: translateY(100vh) rotate(${Math.random() * 360}deg);
-                        opacity: 0;
-                    }
-                }
-            `;
-
-            document.head.appendChild(style);
-            document.body.appendChild(confetti);
-
-            setTimeout(() => confetti.remove(), 2000);
-        }, i * 100);
+    
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
     }
-}
+`;
+document.head.appendChild(style);
 
-// Confetti no primeiro clique em qualquer lugar
-document.addEventListener('click', function firstClick() {
-    createConfetti();
-    document.removeEventListener('click', firstClick);
-});
-
-// Mensagem do footer baseada no horário
-function updateFooterMessage() {
-    const hour = new Date().getHours();
-    let message;
-
-    if (hour < 12) {
-        message = "Bom dia! ☀️";
-    } else if (hour < 18) {
-        message = "Boa tarde! 🌤️";
-    } else {
-        message = "Boa noite! 🌙";
-    }
-
-    footerText.textContent = message;
-}
-
-// Atualizar mensagem do footer a cada minuto
-setInterval(updateFooterMessage, 60000);
-updateFooterMessage();
+console.log('%c🎉 Sistema BMVC Ativo!', 'color: #3498db; font-size: 16px; font-weight: bold;');

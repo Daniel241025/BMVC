@@ -3,32 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Página de Boas-Vindas</title>
+    <title>Calendário</title>
     <link rel="stylesheet" type="text/css" href="/static/css/pagina.css">
-
 </head>
 <body>
     <div class="container">
         <header class="header">
-            <h1 id="welcome-title">Bem-vindo!</h1>
+            <h1>Calendário</h1>
         </header>
         
         <main class="main-content">
-            <div class="welcome-card">
-                <p id="welcome-message">É um prazer ter você aqui!</p>
-                <div class="time-display">
-                    <span id="current-time">Carregando...</span>
+            <div class="calendar-wrapper">
+                <div class="calendar-header">
+                    <button id="prev-month" class="nav-btn">◀</button>
+                    <h2 id="month-year"></h2>
+                    <button id="next-month" class="nav-btn">▶</button>
                 </div>
-                <div class="counter-section">
-                    <p>Você está aqui há: <span id="visit-counter">0</span> segundos</p>
+                
+                <div class="calendar">
+                    <div class="weekdays">
+                        <div class="weekday">Dom</div>
+                        <div class="weekday">Seg</div>
+                        <div class="weekday">Ter</div>
+                        <div class="weekday">Qua</div>
+                        <div class="weekday">Qui</div>
+                        <div class="weekday">Sex</div>
+                        <div class="weekday">Sab</div>
+                    </div>
+                    <div id="calendar-days" class="calendar-days"></div>
                 </div>
-                <button id="theme-toggle" class="theme-btn">🌙 Modo Escuro</button>
-                <button id="change-color" class="color-btn">🎨 Mudar Cor</button>
+                
+                <div class="today-info">
+                    <button id="today-btn" class="today-button">Hoje</button>
+                    <p id="selected-date"></p>
+                </div>
             </div>
         </main>
         
         <footer class="footer">
-            <p id="footer-text">Tenha um excelente dia!</p>
+            <p>Navegue pelo calendário para visualizar datas</p>
         </footer>
     </div>
     
